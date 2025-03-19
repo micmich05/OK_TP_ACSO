@@ -29,9 +29,8 @@ OpcodeEntry opcode_dict[] = {
 
     {0b11101010, "ANDS (Shifted Register)"},
     {0b11001010, "EOR (Shifted Register)"},
-    {0b00000000, "OR"},
 
-    {0b110100110, "LSL (Immediate)"},
+    {0b1101001101, "LSL (Immediate)"},
 
 //    {0b11101011, "CMP"},
     {0b01010100, "B COND"},
@@ -43,11 +42,12 @@ OpcodeEntry opcode_dict[] = {
     {0b00111000010, "LDURB"},
     {0b11010100, "HALT"},
 
-    {0b00000000, "LDR"},
-    {0b00000000, "STR"},
-    {0b00000000, "BRANCH"},
+    // {0b00000000, "LDR"},
+    // {0b00000000, "STR"},
+    // {0b00000000, "BRANCH"},
     {0, NULL}
 };
+
 
 void decode_instruction(uint32_t instr) {
     const uint32_t masks[] = {
