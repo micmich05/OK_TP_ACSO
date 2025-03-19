@@ -6,6 +6,7 @@
 #define OPCODE_MASK_24_31 0xFF000000  // bits [24–31] (8 bits)
 #define OPCODE_MASK_22_31 0xFFC00000  // bits [22–31] (10 bits)
 #define OPCODE_MASK_21_31 0xFFE00000  // bits [21–31] (11 bits)
+// #define OPCODE_MASK_22_29 0x3FC00000  // bits [22–29] (8 bits)
 
 typedef struct {
     uint32_t opcode;
@@ -17,14 +18,30 @@ OpcodeEntry opcode_dict[] = {
     
     {0b10110001, "ADD (Immediate)"},
     {0b10101011, "ADD (Extended register)"},
-    {0b11101011001, "SUB (Extended register)"},
+    {0b11101011, "SUB (Extended register)"},
+    {0b11110001, "SUB (Immediate)"},
+
+    {0b11010000, "MOV"},
 
     {0b11010010, "MOVZ"},
 
+    {0b110100101, "MOV (Wide Inmediate)"},
+
     {0b11101010, "ANDS (Shifted Register)"},
+    {0b11001010, "EOR (Shifted Register)"},
     {0b00000000, "OR"},
 
-    {0b11101011, "CMP"},
+    {0b110100110, "LSL (Immediate)"},
+
+//    {0b11101011, "CMP"},
+    {0b01010100, "B COND"},
+
+    {0b11111000000, "STUR"}, //Reconocer STURB, STUR Y LDUR
+    {0b11111000010, "LDUR"},
+
+    {0b00111000000, "STURB"},
+    {0b00111000010, "LDURB"},
+    {0b11010100, "HALT"},
 
     {0b00000000, "LDR"},
     {0b00000000, "STR"},
@@ -37,8 +54,10 @@ void decode_instruction(uint32_t instr) {
         OPCODE_MASK_21_31,
         OPCODE_MASK_22_31,
         OPCODE_MASK_24_31,
+        // OPCODE_MASK_22_29,
         OPCODE_MASK_26_31
     };
+
     const int shifts[] = {21, 22, 24, 26};
 
     for (int i = 0; i < 4; i++) {
