@@ -11,6 +11,7 @@ void get_command(FILE *dumpsim_file);
 // Máscaras (de menor a mayor cantidad de bits)
 #define OPCODE_MASK_26_31 0xFC000000  // bits [26–31] (6 bits)
 #define OPCODE_MASK_24_31 0xFF000000  // bits [24–31] (8 bits)
+#define OPCODE_MASK_23_31 0xFF800000  // bits [23–31] (9 bits)
 #define OPCODE_MASK_22_31 0xFFC00000  // bits [22–31] (10 bits)
 #define OPCODE_MASK_21_31 0xFFE00000  // bits [21–31] (11 bits)
 
@@ -24,10 +25,10 @@ OpcodeEntry opcode_dict[] = {
     {0b10101011, "ADD (Extended register)"},
     {0b11101011, "SUB (Extended register)"},
     {0b11110001, "SUB (Immediate)"},
-    // {0b11010000, "MOV"},
     {0b110100101, "MOV (Wide Inmediate)"},
-    {0b110100100, "MOVZ"},
-    // {0b110100101, "MOV (Wide Inmediate)"},
+    //{0b11010000, "MOV"},
+    {0b11010010, "MOVZ"},
+    
     {0b11101010, "ANDS (Shifted Register)"},
     {0b11001010, "EOR (Shifted Register)"},
     {0b1101001101, "LSL (Immediate)"},
@@ -46,11 +47,12 @@ void process_instruction() {
     const uint32_t masks[] = {
         OPCODE_MASK_21_31,
         OPCODE_MASK_22_31,
+        OPCODE_MASK_23_31,
         OPCODE_MASK_24_31,
         OPCODE_MASK_26_31
     };
 
-    const int shifts[] = {21, 22, 24, 26};
+    const int shifts[] = {21, 22, 23, 24, 26};
 
     for (int i = 0; i < 4; i++) {
         uint32_t key = (instr & masks[i]) >> shifts[i];
