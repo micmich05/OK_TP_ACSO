@@ -27,19 +27,20 @@ uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) {
 }
 
 void adds_imm(uint32_t instr) {
-    int d = (instr >> 0) & 0b11111;
-    int n = (instr >> 5) & 0b11111;
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int datasize = 64;
-    int imm12 = (instr >> 10) & 0b111111111111;
-    int shift = (instr >> 22) & 0b11;
+    int imm12 = (instr >> 10) & 0xFFF;   // bits [21:10]
+    int shift = (instr >> 22) & 0x1;     // solo 1 bit en lugar de 2
+
     // Inicialmente imm es imm12
     uint64_t imm = imm12;
 
     switch (shift) {
-        case 0b00:
+        case 0:
             imm = zeroExtend(imm, datasize);
             break;
-        case 0b01:
+        case 1:
             imm = zeroExtend(imm << 12, datasize);
             break;
         default:
@@ -48,10 +49,16 @@ void adds_imm(uint32_t instr) {
     }
 
     // Extiende a datasize (64 bits)
-    imm = imm & ((1ULL << datasize) - 1);
+    imm = imm & ~0ULL;
 
     uint64_t operand1 = CURRENT_STATE.REGS[n];
     uint64_t result = addWithCarry(operand1, imm, 0);
+
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = result;
+
+    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
+    // Si es necesario actualizar otros flags, se podría hacer aquí.
 
     printf("d: %d\n", d);
     printf("imm: %llu\n", imm);
