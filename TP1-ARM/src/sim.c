@@ -4,6 +4,61 @@
 #include <string.h>  // para strcmp
 #include "shell.h"
 
+// Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
+
+// Funciones integradas de add.c
+
+uint64_t zeroExtend(uint64_t imm, int datasize) {
+    if (datasize >= 64)
+        return imm;
+    else
+        return imm & ((1ULL << datasize) - 1);
+}
+
+uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) {
+    uint64_t unsigned_sum = x + y + carry_in;
+    uint64_t result = unsigned_sum & ((1ULL << 64) - 1);
+
+    // Actualiza banderas de estado
+    NEXT_STATE.FLAG_N = (result >> 63) & 1;
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
+
+    return result;
+}
+
+void adds_imm(uint32_t instr) {
+    int d = (instr >> 0) & 0b11111;
+    int n = (instr >> 5) & 0b11111;
+    int datasize = 64;
+    int imm12 = (instr >> 10) & 0b111111111111;
+    int shift = (instr >> 22) & 0b11;
+    // Inicialmente imm es imm12
+    uint64_t imm = imm12;
+
+    switch (shift) {
+        case 0b00:
+            imm = zeroExtend(imm, datasize);
+            break;
+        case 0b01:
+            imm = zeroExtend(imm << 12, datasize);
+            break;
+        default:
+            printf("ReservedValue()\n");
+            return;
+    }
+
+    // Extiende a datasize (64 bits)
+    imm = imm & ((1ULL << datasize) - 1);
+
+    uint64_t operand1 = CURRENT_STATE.REGS[n];
+    uint64_t result = addWithCarry(operand1, imm, 0);
+
+    printf("d: %d\n", d);
+    printf("imm: %llu\n", imm);
+    printf("operand1: %llu\n", operand1);
+    printf("result: %llu\n", result);
+}
+
 // Declaración de funciones definidas en shell.c
 void initialize(const char *program_file, int num_files);
 void get_command(FILE *dumpsim_file);
@@ -28,7 +83,6 @@ OpcodeEntry opcode_dict[] = {
     {0b110100101, "MOV (Wide Inmediate)"},
     //{0b11010000, "MOV"},
     {0b11010010, "MOVZ"},
-    
     {0b11101010, "ANDS (Shifted Register)"},
     {0b11001010, "EOR (Shifted Register)"},
     {0b1101001101, "LSL (Immediate)"},
@@ -59,15 +113,21 @@ void process_instruction() {
 
         for (int j = 0; opcode_dict[j].mnemonic != NULL; j++) {
             if (opcode_dict[j].opcode == key) {
-                printf("%s\n", opcode_dict[j].mnemonic);
-
-                // Si la instrucción es HALT se desactiva el simulador y finaliza la ejecución
-                if (strcmp(opcode_dict[j].mnemonic, "HALT") == 0) {
+                // Llama a adds_imm si se detecta "ADD (Immediate)"
+                if (strcmp(opcode_dict[j].mnemonic, "ADD (Immediate)") == 0) {
+                    adds_imm(instr);
+                }
+                // Si la instrucción es HALT se detiene la simulación
+                else if (strcmp(opcode_dict[j].mnemonic, "HALT") == 0) {
                     RUN_BIT = FALSE;
                     exit(0);
                 }
+                // Si es otra instrucción, solo se muestra su mnemónico
+                else {
+                    printf("%s\n", opcode_dict[j].mnemonic);
+                }
 
-                // Se incrementa el contador de programa (PC) en 4 bytes (instrucciones de tamaño fijo)
+                // Actualiza el PC
                 NEXT_STATE.PC = CURRENT_STATE.PC + 4;
                 CURRENT_STATE = NEXT_STATE;
                 return;
@@ -76,7 +136,7 @@ void process_instruction() {
     }
     printf("Instruccion no encontrada\n");
 
-    // Actualizar PC aun si la instrucción no fue reconocida
+    // Actualizar PC aún si la instrucción no fue reconocida
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     CURRENT_STATE = NEXT_STATE;
 }
