@@ -1,30 +1,18 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>  // para strcmp
 #include "shell.h"
-
+uint64_t SignExtend(uint64_t value, int bits);
+bool check_cond(int cond);
+uint64_t zeroExtend(uint64_t imm, int datasize);
+uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) ;
 // Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
 
 // Funciones integradas de add.c
 
-uint64_t zeroExtend(uint64_t imm, int datasize) {
-    if (datasize >= 64)
-        return imm;
-    else
-        return imm & ((1ULL << datasize) - 1);
-}
 
-uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) {
-    uint64_t unsigned_sum = x + y + carry_in;
-    uint64_t result = unsigned_sum & ((1ULL << 64) - 1);
-
-    // Actualiza banderas de estado
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-
-    return result;
-}
 
 void adds_imm(uint32_t instr) {
     int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
@@ -146,4 +134,67 @@ void process_instruction() {
     // Actualizar PC aún si la instrucción no fue reconocida
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     CURRENT_STATE = NEXT_STATE;
+}
+
+void bcond (uint32_t instr){
+    //Decode
+    int cond = (instr >> 0) & 0xF;
+    int imm19 = (instr >> 5) & 0x7FFFF;
+
+    uint64_t offset = SignExtend(imm19 << 2, 64);
+
+    //Execute
+    if (check_cond(cond)){
+        //Update PC
+        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+    }
+    else{
+        //Update PC
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    }
+}
+
+
+///////////FUNCIONES AUXILIARES/////////////
+
+bool check_cond(int cond){
+    switch (cond){
+        case 0b0000: //Equal
+            return CURRENT_STATE.FLAG_Z;
+        case 0b0001: //Not equal
+            return !CURRENT_STATE.FLAG_Z;
+        case 0b1010: //Greater than or equal
+            return CURRENT_STATE.FLAG_N == 0;
+        case 0b1011: //Less than
+            return CURRENT_STATE.FLAG_N != 0;
+        case 0b1100: //Greater than
+            return !CURRENT_STATE.FLAG_Z && (CURRENT_STATE.FLAG_N == 0);
+        case 0b1101: //Less than or equal
+            return CURRENT_STATE.FLAG_Z || (CURRENT_STATE.FLAG_N != 0);
+        default:
+            return false;
+    }
+}
+
+uint64_t SignExtend(uint64_t value, int bits) {
+    uint64_t mask = 1ULL << (bits - 1);
+    return (value ^ mask) - mask;
+}
+
+uint64_t zeroExtend(uint64_t imm, int datasize) {
+    if (datasize >= 64)
+        return imm;
+    else
+        return imm & ((1ULL << datasize) - 1);
+}
+
+uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) {
+    uint64_t unsigned_sum = x + y + carry_in;
+    uint64_t result = unsigned_sum & ((1ULL << 64) - 1);
+
+    // Actualiza banderas de estado
+    NEXT_STATE.FLAG_N = (result >> 63) & 1;
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
+
+    return result;
 }
