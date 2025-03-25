@@ -8,6 +8,7 @@ uint64_t SignExtend(uint64_t value, int bits);
 bool check_cond(int cond);
 uint64_t zeroExtend(uint64_t imm, int datasize);
 uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) ;
+void bcond(uint32_t instr);
 // Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
 
 // Funciones integradas de add.c
@@ -112,6 +113,10 @@ void process_instruction() {
                 if (strcmp(opcode_dict[j].mnemonic, "ADD (Immediate)") == 0) {
                     adds_imm(instr);
                 }
+                // Llama a bcond si se detecta "B COND"
+                else if (strcmp(opcode_dict[j].mnemonic, "B COND") == 0) {
+                    bcond(instr);
+                }
                 // Si la instrucción es HALT se detiene la simulación
                 else if (strcmp(opcode_dict[j].mnemonic, "HALT") == 0) {
                     RUN_BIT = FALSE;
@@ -120,17 +125,16 @@ void process_instruction() {
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
                     printf("%s\n", opcode_dict[j].mnemonic);
+                    // Actualiza el PC para instrucciones que no modifican la branch
+                    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
                 }
 
-                // Actualiza el PC
-                NEXT_STATE.PC = CURRENT_STATE.PC + 4;
                 CURRENT_STATE = NEXT_STATE;
                 return;
             }
         }
     }
     printf("Instruccion no encontrada\n");
-
     // Actualizar PC aún si la instrucción no fue reconocida
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     CURRENT_STATE = NEXT_STATE;
