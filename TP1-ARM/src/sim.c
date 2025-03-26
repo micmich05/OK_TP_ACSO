@@ -30,6 +30,7 @@ void br(uint32_t instr);
 void sturh(uint32_t instr);
 void ldurh(uint32_t instr);
 void mul(uint32_t instr);
+void cbz(uint32_t instr);
 
 
 
@@ -118,6 +119,7 @@ OpcodeEntry opcode_dict[] = {
     {0b01111000000, "STURH"},
     {0b01111000010, "LDURH"},
     {0b10011011000, "MUL"},
+    {0b10110100, "CBZ"},
     {0, NULL}
 };
 
@@ -207,6 +209,9 @@ void process_instruction() {
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "MUL") == 0) {
                     mul(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "CBZ") == 0) {
+                    cbz(instr);
                 }
                 
                 // Si es otra instrucción, solo se muestra su mnemónico
@@ -686,6 +691,24 @@ void mul(uint32_t instr){
 
     printf("MUL: d=%d, n=%d, m=%d, operand1=%llu, operand2=%llu, result=%llu\n",
            d, n, m, operand1, operand2, result);
+}
+
+void cbz (uint32_t instr){
+    // Decode
+    int t = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int imm19 = (instr >> 5) & 0x7FFFF;   // bits [23:5]
+    uint64_t offset = SignExtend(imm19 << 2, 21);
+
+    // Execute
+    if (CURRENT_STATE.REGS[t] == 0){
+        printf("CBZ True: register %d is zero, offset = %llu\n", t, offset);
+        // El target es (PC + 4) + offset
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4 + offset;
+    }
+    else{
+        printf("CBZ False: register %d is not zero, jumping to PC + 4\n", t);
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    }
 }
 
 ///////////FUNCIONES AUXILIARES/////////////
