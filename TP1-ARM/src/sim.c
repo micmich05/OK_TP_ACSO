@@ -24,6 +24,9 @@ uint8_t mem_read_8(uint64_t addr);
 void mem_write_8(uint64_t addr, uint8_t value);
 uint64_t mem_read_64(uint64_t addr);
 void mem_write_64(uint64_t addr, uint64_t value);
+void orr (uint32_t instr);
+void b(uint32_t instr);
+void br(uint32_t instr);
 
 
 
@@ -97,7 +100,7 @@ OpcodeEntry opcode_dict[] = {
     //{0b110100101, "MOV (Wide Inmediate)"},
     //{0b11010000, "MOV"},
     {0b11010010, "MOVZ"},
-    {0b11101010, "ANDS (Shifted Register)"},
+    {0b11101010000, "ANDS (Shifted Register)"},
     {0b11001010, "EOR (Shifted Register)"},
     {0b1101001101, "LSL (Immediate)"},
     {0b01010100, "B COND"},
@@ -106,6 +109,9 @@ OpcodeEntry opcode_dict[] = {
     {0b00111000000, "STURB"},
     {0b00111000010, "LDURB"},
     {0b11010100, "HALT"},
+    {0b10101010000,"ORR (Shifted Register)"},
+    {0b000101, "B"},
+    {0b11010110, "BR"},
     {0, NULL}
 };
 
@@ -176,6 +182,15 @@ void process_instruction() {
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "LDURB") == 0) {
                     ldurb(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "ORR (Shifted Register)") == 0) {
+                    orr(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "B") == 0) {
+                    b(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "BR") == 0) {
+                    br(instr);
                 }
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
@@ -391,10 +406,6 @@ void eor (uint32_t instr){
 
     NEXT_STATE.REGS[d] = result;
 
-    //actualizar flags
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-
     printf("d: %d\n", d);
     printf("operand2: %llu\n", operand2);
     printf("operand1: %llu\n", operand1);
@@ -551,6 +562,49 @@ void ldurb (uint32_t instr){
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
+void orr (uint32_t instr){
+    // Decode
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
+
+    // Recuperar el valor de Rm
+    uint64_t operand1 = CURRENT_STATE.REGS[m];
+    uint64_t operand2 = CURRENT_STATE.REGS[n];
+    
+    uint64_t result = operand1 | operand2;
+    
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = result;
+    // Actualizar el PC para avanzar a la siguiente instrucción
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    
+    printf("ORR (Shifted Register): d=%d, n=%d, m=%d, operand1=%llu, operand2=%llu, result=%llu\n",
+           d, n, m, operand1, operand2, result);
+
+}
+
+void b(uint32_t instr){
+    // Decode
+    int imm26 = (instr >> 0) & 0x3FFFFFF;   // bits [25:0]
+    uint64_t offset = SignExtend(imm26 << 2, 28);
+
+    // Execute
+    printf("B: offset = %llu\n", offset);
+    // El target es (PC + 4) + offset
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4 + offset;
+}
+
+void br(uint32_t instr){
+    // Decode
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+
+    // Execute
+    printf("BR: jumping to address in register %d\n", n);
+    // El target es el contenido del registro n
+    NEXT_STATE.PC = CURRENT_STATE.REGS[n];
+}
+
 ///////////FUNCIONES AUXILIARES/////////////
 
 bool check_cond(int cond){
@@ -594,6 +648,7 @@ uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) {
 
     return result;
 }
+
 
 // Lee un byte de memoria usando mem_read_32
 uint8_t mem_read_8(uint64_t addr) {
