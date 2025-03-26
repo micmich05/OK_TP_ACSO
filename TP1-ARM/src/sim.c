@@ -167,6 +167,7 @@ void process_instruction() {
                     subs_register(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "ADD (Extended register)") == 0) {
+                    printf("entro al add");
                     adds_register(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "ANDS (Shifted Register)") == 0) {
@@ -354,7 +355,7 @@ void adds_register(uint32_t instr){
     
     // Recuperar el valor de Rm
     uint64_t rm_val = CURRENT_STATE.REGS[m];
-    uint64_t ext_rm;
+    uint64_t ext_rm = CURRENT_STATE.REGS[n];
     
     // Según la opción, se extiende el contenido de Rm (se toman los 32 bits inferiores)
     // 0 => UXTW: extensión cero de 32 bits
@@ -373,14 +374,14 @@ void adds_register(uint32_t instr){
     
     // Realizar la suma: resultado = Rn + ext_rm
     uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t result = addWithCarry(operand1, ext_rm, 0);
+    uint64_t result = operand1 + ext_rm ;
     
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
     // Actualizar el PC para avanzar a la siguiente instrucción
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     
-    printf("ADD (Extended register): d=%d, n=%d, m=%d, imm3=%d, option=%d, rm_val=%llu, ext_rm=%llu, result=%llu\n",
+    printf("ADDS (Extended register): d=%d, n=%d, m=%d, imm3=%d, option=%d, rm_val=%llu, ext_rm=%llu, result=%llu\n",
            d, n, m, imm3, option, rm_val, ext_rm, result);
 }
 
