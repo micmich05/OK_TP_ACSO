@@ -285,14 +285,15 @@ void subis(uint32_t instr){
     // Extiende a datasize (64 bits)
 
     uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = -(int64_t)imm;
-    uint64_t result = addWithCarry(operand1, imm, 0); //TODO: Ver carry 0
+    uint64_t operand2 = imm;
+    uint64_t result = operand1 - operand2;
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
+    //actualizar flags
+    NEXT_STATE.FLAG_N = (result >> 63) & 1;
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
 
     printf("d: %d\n", d);
     printf("imm: %llu\n", imm);
