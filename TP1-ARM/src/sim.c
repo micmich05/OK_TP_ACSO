@@ -14,6 +14,8 @@ void subs_register(uint32_t instr);
 void adds_register(uint32_t instr);
 void ands(uint32_t instr);
 void eor(uint32_t instr);
+void lsl(uint32_t instr);
+void movz (uint32_t instr);
 
 
 // Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
@@ -81,7 +83,7 @@ OpcodeEntry opcode_dict[] = {
     {0b10101011, "ADD (Extended register)"},
     {0b11101011, "SUB (Extended register)"},
     {0b11110001, "SUB (Immediate)"},
-    {0b110100101, "MOV (Wide Inmediate)"},
+    //{0b110100101, "MOV (Wide Inmediate)"},
     //{0b11010000, "MOV"},
     {0b11010010, "MOVZ"},
     {0b11101010, "ANDS (Shifted Register)"},
@@ -145,6 +147,12 @@ void process_instruction() {
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "EOR (Shifted Register)") == 0) {
                     eor(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "LSL (Immediate)") == 0) {
+                    lsl(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "MOVZ") == 0) {
+                    movz(instr);
                 }
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
@@ -374,6 +382,59 @@ void eor (uint32_t instr){
 
 }
 
+void lsl (uint32_t instr){
+    // Decode
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int imm6 = (instr >> 10) & 0x3F;   // bits [15:10]
+    int immr = (instr >> 16) & 0x3F;     // bits [21:16]
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm6;
+
+    // Extiende a datasize (64 bits)
+
+    uint64_t operand1 = CURRENT_STATE.REGS[n];
+    uint64_t operand2 = immr;
+    uint64_t result = operand1 << imm;
+
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = result;
+
+    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
+    // Si es necesario actualizar otros flags, se podría hacer aquí.
+
+    printf("d: %d\n", d);
+    printf("imm: %llu\n", imm);
+    printf("operand1: %llu\n", operand1);
+    printf("result: %llu\n", result);
+
+    //Update PC
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    
+}
+
+void movz (uint32_t instr){
+    // Decode
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int imm16 = (instr >> 5) & 0xFFFF;   // bits [20:5]
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm16;
+    imm = zeroExtend(imm, 64);
+
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = imm;
+
+    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
+    // Si es necesario actualizar otros flags, se podría hacer aquí.
+
+    printf("d: %d\n", d);
+    printf("imm: %llu\n", imm);
+
+    //Update PC
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
 
 ///////////FUNCIONES AUXILIARES/////////////
 
