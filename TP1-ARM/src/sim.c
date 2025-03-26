@@ -27,6 +27,7 @@ void mem_write_64(uint64_t addr, uint64_t value);
 void orr (uint32_t instr);
 void b(uint32_t instr);
 void br(uint32_t instr);
+void sturh(uint32_t instr);
 
 
 
@@ -112,6 +113,7 @@ OpcodeEntry opcode_dict[] = {
     {0b10101010000,"ORR (Shifted Register)"},
     {0b000101, "B"},
     {0b11010110, "BR"},
+    {0b01111000000, "STURH"},
     {0, NULL}
 };
 
@@ -191,6 +193,9 @@ void process_instruction() {
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "BR") == 0) {
                     br(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "STURH") == 0) {
+                    sturh(instr);
                 }
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
@@ -603,6 +608,29 @@ void br(uint32_t instr){
     printf("BR: jumping to address in register %d\n", n);
     // El target es el contenido del registro n
     NEXT_STATE.PC = CURRENT_STATE.REGS[n];
+}
+
+void sturh (uint32_t instr){
+    // Decode
+    int t = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int imm9 = (instr >> 12) & 0x1FF;   // bits [20:12]
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm9;
+    imm = zeroExtend(imm, 64);
+
+    // Guardar el resultado en el registro destino
+    mem_write_8(CURRENT_STATE.REGS[n] + imm, CURRENT_STATE.REGS[t]);
+
+    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
+    // Si es necesario actualizar otros flags, se podría hacer aquí.
+
+    printf("t: %d\n", t);
+    printf("imm: %llu\n", imm);
+
+    //Update PC
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 ///////////FUNCIONES AUXILIARES/////////////
