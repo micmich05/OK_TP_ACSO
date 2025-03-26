@@ -13,6 +13,7 @@ void subis(uint32_t instr);
 void subs_register(uint32_t instr);
 void adds_register(uint32_t instr);
 void ands(uint32_t instr);
+void eor(uint32_t instr);
 
 
 // Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
@@ -141,6 +142,9 @@ void process_instruction() {
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "ANDS (Shifted Register)") == 0) {
                     ands(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "EOR (Shifted Register)") == 0) {
+                    eor(instr);
                 }
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
@@ -337,6 +341,37 @@ void ands(uint32_t instr){
 
     //Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
+
+void eor (uint32_t instr){
+    // Decode
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
+
+    // Inicialmente imm es imm12
+
+    uint64_t operand1 = CURRENT_STATE.REGS[n];
+    uint64_t operand2 = CURRENT_STATE.REGS[m];
+
+    uint64_t result = operand1 ^ operand2;
+
+    // Guardar el resultado en el registro destino
+
+    NEXT_STATE.REGS[d] = result;
+
+    //actualizar flags
+    NEXT_STATE.FLAG_N = (result >> 63) & 1;
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
+
+    printf("d: %d\n", d);
+    printf("operand2: %llu\n", operand2);
+    printf("operand1: %llu\n", operand1);
+    printf("result: %llu\n", result);
+
+    //Update PC
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+
 }
 
 
