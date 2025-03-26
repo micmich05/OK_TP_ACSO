@@ -10,6 +10,8 @@ uint64_t zeroExtend(uint64_t imm, int datasize);
 uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) ;
 void bcond(uint32_t instr);
 void subis(uint32_t instr);
+void subs_register(uint32_t instr);
+
 
 // Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
 
@@ -46,8 +48,8 @@ void adds_imm(uint32_t instr) {
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
+    // Actualiza el PC para avanzar a la siguiente instrucción
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 
     printf("d: %d\n", d);
     printf("imm: %llu\n", imm);
@@ -109,6 +111,9 @@ void process_instruction() {
 
         for (int j = 0; opcode_dict[j].mnemonic != NULL; j++) {
             if (opcode_dict[j].opcode == key) {
+                // Imprime el mnemónico de la instrucción detectada
+                printf("Ejecutando %s\n", opcode_dict[j].mnemonic);
+
                 // Llama a adds_imm si se detecta "ADD (Immediate)"
                 if (strcmp(opcode_dict[j].mnemonic, "ADD (Immediate)") == 0) {
                     adds_imm(instr);
@@ -117,20 +122,18 @@ void process_instruction() {
                 else if (strcmp(opcode_dict[j].mnemonic, "B COND") == 0) {
                     bcond(instr);
                 }
-
                 else if (strcmp(opcode_dict[j].mnemonic, "SUB (Immediate)") == 0) {
                     subis(instr);
                 }
                 // Si la instrucción es HALT se detiene la simulación
                 else if (strcmp(opcode_dict[j].mnemonic, "HALT") == 0) {
                     RUN_BIT = FALSE;
+                    printf("Ejecutando HALT: finalizando simulación\n");
                     exit(0);
                 }
-
                 else if (strcmp(opcode_dict[j].mnemonic, "SUB (Extended register)") == 0) {
                     subs_register(instr);
                 }
-                
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
                     printf("%s\n", opcode_dict[j].mnemonic);
@@ -145,24 +148,26 @@ void process_instruction() {
     }
     printf("Instruccion no encontrada\n");
     // Actualizar PC aún si la instrucción no fue reconocida
+    printf("PC: %d\n", CURRENT_STATE.PC);
+    printf("Opcode: 0x%08X\n", instr);
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     CURRENT_STATE = NEXT_STATE;
 }
 
 void bcond (uint32_t instr){
-    //Decode
+    // Decode
     int cond = (instr >> 0) & 0xF;
     int imm19 = (instr >> 5) & 0x7FFFF;
+    uint64_t offset = SignExtend(imm19 << 2, 21);
 
-    uint64_t offset = SignExtend(imm19 << 2, 64);
-
-    //Execute
+    // Execute
     if (check_cond(cond)){
-        //Update PC
-        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+        printf("BCOND True: condition %d met, offset = %llu\n", cond, offset);
+        // El target es (PC + 4) + offset
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4 + offset;
     }
     else{
-        //Update PC
+        printf("BCOND False: condition %d not met, jumping to PC + 4\n", cond);
         NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     }
 }
@@ -256,17 +261,17 @@ void subs_register(uint32_t instr){
 bool check_cond(int cond){
     switch (cond){
         case 0b0000: //Equal
-            return CURRENT_STATE.FLAG_Z;
+            return CURRENT_STATE.FLAG_Z == 1;
         case 0b0001: //Not equal
-            return !CURRENT_STATE.FLAG_Z;
+            return CURRENT_STATE.FLAG_Z == 0;
         case 0b1010: //Greater than or equal
-            return CURRENT_STATE.FLAG_N == 0;
+            return CURRENT_STATE.FLAG_N == 0 || CURRENT_STATE.FLAG_Z == 1;
         case 0b1011: //Less than
-            return CURRENT_STATE.FLAG_N != 0;
+            return CURRENT_STATE.FLAG_N != 1 && CURRENT_STATE.FLAG_Z == 0;
         case 0b1100: //Greater than
-            return !CURRENT_STATE.FLAG_Z && (CURRENT_STATE.FLAG_N == 0);
+            return CURRENT_STATE.FLAG_N == 0 && CURRENT_STATE.FLAG_Z == 0;
         case 0b1101: //Less than or equal
-            return CURRENT_STATE.FLAG_Z || (CURRENT_STATE.FLAG_N != 0);
+            return CURRENT_STATE.FLAG_N == 1 || CURRENT_STATE.FLAG_Z == 1;
         default:
             return false;
     }
