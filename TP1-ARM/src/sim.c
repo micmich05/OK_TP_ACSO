@@ -29,6 +29,7 @@ void b(uint32_t instr);
 void br(uint32_t instr);
 void sturh(uint32_t instr);
 void ldurh(uint32_t instr);
+void mul(uint32_t instr);
 
 
 
@@ -116,6 +117,7 @@ OpcodeEntry opcode_dict[] = {
     {0b11010110, "BR"},
     {0b01111000000, "STURH"},
     {0b01111000010, "LDURH"},
+    {0b10011011000, "MUL"},
     {0, NULL}
 };
 
@@ -196,12 +198,17 @@ void process_instruction() {
                 else if (strcmp(opcode_dict[j].mnemonic, "BR") == 0) {
                     br(instr);
                 }
+                
                 else if (strcmp(opcode_dict[j].mnemonic, "STURH") == 0) {
                     sturh(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "LDURH") == 0) {
                     ldurh(instr);
                 }
+                else if (strcmp(opcode_dict[j].mnemonic, "MUL") == 0) {
+                    mul(instr);
+                }
+                
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
                     printf("%s\n", opcode_dict[j].mnemonic);
@@ -658,6 +665,27 @@ void ldurh (uint32_t instr){
 
     //Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
+
+void mul(uint32_t instr){
+    // Decode
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
+
+    // Execute
+    uint64_t operand1 = CURRENT_STATE.REGS[n];
+    uint64_t operand2 = CURRENT_STATE.REGS[m];
+    uint64_t result = operand1 * operand2;
+
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = result;
+
+    // Actualizar el PC para avanzar a la siguiente instrucción
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+
+    printf("MUL: d=%d, n=%d, m=%d, operand1=%llu, operand2=%llu, result=%llu\n",
+           d, n, m, operand1, operand2, result);
 }
 
 ///////////FUNCIONES AUXILIARES/////////////
