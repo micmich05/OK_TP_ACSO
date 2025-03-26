@@ -67,10 +67,14 @@ void adds_imm(uint32_t instr) {
     imm = imm & ~0ULL;
 
     uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t result = addWithCarry(operand1, imm, 0);
+    uint64_t result = operand1 + imm;
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
+
+    //actualizo flags
+    NEXT_STATE.FLAG_N = (result >> 63) & 1;
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
 
     // Actualiza el PC para avanzar a la siguiente instrucción
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
@@ -348,41 +352,23 @@ void adds_register(uint32_t instr){
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
     int datasize = 64;
 
-    // Extraer el valor de imm3 (shift amount) de bits [10:12]
-    int imm3 = (instr >> 10) & 0x7;
-    // Extraer la opción de extensión de bits [13:15]
-    int option = (instr >> 13) & 0x7;
-    
-    // Recuperar el valor de Rm
-    uint64_t rm_val = CURRENT_STATE.REGS[m];
-    uint64_t ext_rm = CURRENT_STATE.REGS[n];
-    
-    // Según la opción, se extiende el contenido de Rm (se toman los 32 bits inferiores)
-    // 0 => UXTW: extensión cero de 32 bits
-    // 2 => SXTW: extensión con signo de 32 bits
-    if(option == 0){
-         ext_rm = rm_val & 0xFFFFFFFF;
-    } else if(option == 2){
-         ext_rm = (uint64_t)(int32_t)(rm_val & 0xFFFFFFFF);
-    } else {
-         // Si la opción no es la esperada, por defecto se realiza UXTW.
-         ext_rm = rm_val & 0xFFFFFFFF;
-    }
-    
-    // Aplicar el desplazamiento a la izquierda por imm3 bits
-    ext_rm = ext_rm << imm3;
-    
     // Realizar la suma: resultado = Rn + ext_rm
     uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t result = operand1 + ext_rm ;
+    uint64_t operand2 = CURRENT_STATE.REGS[m];
+    uint64_t result = operand1 + operand2;
     
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
+
+    //Actualiza flags
+    NEXT_STATE.FLAG_N = (result >> 63) & 1;
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
+    
     // Actualizar el PC para avanzar a la siguiente instrucción
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     
     printf("ADDS (Extended register): d=%d, n=%d, m=%d, imm3=%d, option=%d, rm_val=%llu, ext_rm=%llu, result=%llu\n",
-           d, n, m, imm3, option, rm_val, ext_rm, result);
+           d, n, m, result);
 }
 
 void ands(uint32_t instr){
