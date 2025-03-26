@@ -309,34 +309,21 @@ void subs_register(uint32_t instr){
     int d = (unsigned int)((instr >> 0) & 0x1F);         // bits [4:0]: registro destino
     int n = (unsigned int)((instr >> 5) & 0x1F);         // bits [9:5]: registro fuente
     int m = (unsigned int)((instr >> 16) & 0x1F);        // bits [20:16]: registro fuente 2
-    int shift = (instr >> 22) & 0x3;     // 2 bits
-
-    // Inicialmente imm es imm12
-    uint64_t imm = CURRENT_STATE.REGS[m];
-
-    switch (shift) {
-        case 0:
-            imm = zeroExtend(imm, 64);
-            break;
-        case 1:
-            imm = zeroExtend(imm << 12, 64);
-            break;
-    }
 
     // Extiende a datasize (64 bits)
 
     uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = -(int64_t)imm;
-    uint64_t result = addWithCarry(operand1, imm, 0); //TODO: Ver carry 0
+    uint64_t operand2 = CURRENT_STATE.REGS[m];
+    uint64_t result = operand1 - operand2;
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
+    //actualizar flags
+    NEXT_STATE.FLAG_N = (result >> 63) & 1;
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
 
     printf("d: %d\n", d);
-    printf("imm: %llu\n", imm);
     printf("operand1: %llu\n", operand1);
     printf("result: %llu\n", result);
 
@@ -363,7 +350,7 @@ void adds_register(uint32_t instr){
     //Actualiza flags
     NEXT_STATE.FLAG_N = (result >> 63) & 1;
     NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-    
+
     // Actualizar el PC para avanzar a la siguiente instrucción
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     
