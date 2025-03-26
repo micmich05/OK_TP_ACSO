@@ -16,6 +16,17 @@ void ands(uint32_t instr);
 void eor(uint32_t instr);
 void lsl(uint32_t instr);
 void movz (uint32_t instr);
+void sturb (uint32_t instr);
+void stur (uint32_t instr);
+void ldur (uint32_t instr);
+void ldurb (uint32_t instr);
+uint8_t mem_read_8(uint64_t addr);
+void mem_write_8(uint64_t addr, uint8_t value);
+uint64_t mem_read_64(uint64_t addr);
+void mem_write_64(uint64_t addr, uint64_t value);
+
+
+
 
 
 // Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
@@ -153,6 +164,18 @@ void process_instruction() {
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "MOVZ") == 0) {
                     movz(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "STUR") == 0) {
+                    stur(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "LDUR") == 0) {
+                    ldur(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "STURB") == 0) {
+                    sturb(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "LDURB") == 0) {
+                    ldurb(instr);
                 }
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
@@ -436,6 +459,98 @@ void movz (uint32_t instr){
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
+void sturb (uint32_t instr){
+    // Decode
+    int t = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int imm9 = (instr >> 12) & 0x1FF;   // bits [20:12]
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm9;
+    imm = zeroExtend(imm, 64);
+
+    // Guardar el resultado en el registro destino
+    mem_write_8(CURRENT_STATE.REGS[n] + imm, CURRENT_STATE.REGS[t]);
+
+    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
+    // Si es necesario actualizar otros flags, se podría hacer aquí.
+
+    printf("t: %d\n", t);
+    printf("imm: %llu\n", imm);
+
+    //Update PC
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
+
+void stur (uint32_t instr){
+    // Decode
+    int t = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int imm9 = (instr >> 12) & 0x1FF;   // bits [20:12]
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm9;
+    imm = zeroExtend(imm, 64);
+
+    // Guardar el resultado en el registro destino
+    mem_write_64(CURRENT_STATE.REGS[n] + imm, CURRENT_STATE.REGS[t]);
+
+    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
+    // Si es necesario actualizar otros flags, se podría hacer aquí.
+
+    printf("t: %d\n", t);
+    printf("imm: %llu\n", imm);
+
+    //Update PC
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
+
+void ldur (uint32_t instr){
+    // Decode
+    int t = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int imm9 = (instr >> 12) & 0x1FF;   // bits [20:12]
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm9;
+    imm = zeroExtend(imm, 64);
+
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[t] = mem_read_64(CURRENT_STATE.REGS[n] + imm);
+
+    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
+    // Si es necesario actualizar otros flags, se podría hacer aquí.
+
+    printf("t: %d\n", t);
+    printf("imm: %llu\n", imm);
+
+    //Update PC
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
+
+void ldurb (uint32_t instr){
+    // Decode
+    int t = (instr >> 0) & 0x1F;         // bits [4:0]: destino, en este caso W1
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: fuente, en este caso X2
+    int imm9 = (instr >> 12) & 0x1FF;      // bits [20:12]: offset inmediato
+
+    // Zero extend the immediate value
+    uint64_t imm = zeroExtend(imm9, 64);
+
+    // For ldurb W1, [X2, #0x10], imm decodificado debe ser 0x10.
+    // Lee 8 bits de memoria en la dirección (X2 + imm),
+    // luego los extiende a 64 bits (los 56 bits altos se ponen a 0)
+    uint8_t loaded_val = mem_read_8(CURRENT_STATE.REGS[n] + imm);
+    NEXT_STATE.REGS[t] = (uint64_t) loaded_val;
+    
+    printf("t: %d\n", t);
+    printf("imm: %llu\n", imm);
+    printf("loaded value: %u\n", loaded_val);
+
+    // Actualiza PC para la siguiente instrucción
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
+
 ///////////FUNCIONES AUXILIARES/////////////
 
 bool check_cond(int cond){
@@ -478,4 +593,37 @@ uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) {
     NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
 
     return result;
+}
+
+// Lee un byte de memoria usando mem_read_32
+uint8_t mem_read_8(uint64_t addr) {
+    uint64_t aligned_addr = addr & ~0x3ULL; // Alinear la dirección a 4 bytes
+    int shift = (addr & 0x3) * 8;           // Desfase interno (0 a 3)
+    uint32_t word = mem_read_32(aligned_addr);
+    return (word >> shift) & 0xFF;
+}
+
+// Escribe un byte en memoria usando mem_read_32 y mem_write_32
+void mem_write_8(uint64_t addr, uint8_t value) {
+    uint64_t aligned_addr = addr & ~0x3ULL;
+    int shift = (addr & 0x3) * 8;
+    uint32_t word = mem_read_32(aligned_addr);
+    word &= ~(0xFFU << shift);            // Limpiar los 8 bits correspondientes
+    word |= ((uint32_t)value << shift);   // Insertar el valor
+    mem_write_32(aligned_addr, word);
+}
+
+// Lee 64 bits de memoria usando dos lecturas de 32 bits consecutivas
+uint64_t mem_read_64(uint64_t addr) {
+    uint32_t low = mem_read_32(addr);
+    uint32_t high = mem_read_32(addr + 4);
+    return (((uint64_t) high) << 32) | low;
+}
+
+// Escribe 64 bits en memoria usando dos escrituras de 32 bits consecutivas
+void mem_write_64(uint64_t addr, uint64_t value) {
+    uint32_t low = (uint32_t)(value & 0xFFFFFFFF);
+    uint32_t high = (uint32_t)(value >> 32);
+    mem_write_32(addr, low);
+    mem_write_32(addr + 4, high);
 }
