@@ -164,6 +164,7 @@ void process_instruction() {
                 // Si la instrucción es HALT se detiene la simulación
                 else if (strcmp(opcode_dict[j].mnemonic, "HALT") == 0) {
                     RUN_BIT = FALSE;
+                    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
                     printf("Ejecutando HALT: finalizando simulación\n");
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "SUB (Extended register)") == 0) {
