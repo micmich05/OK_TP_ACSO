@@ -14,7 +14,7 @@ void subs_register(uint32_t instr);
 void adds_register(uint32_t instr);
 void ands(uint32_t instr);
 void eor(uint32_t instr);
-void lsl(uint32_t instr);
+void logical_shift(uint32_t instr);
 void movz (uint32_t instr);
 void sturb (uint32_t instr);
 void stur (uint32_t instr);
@@ -111,7 +111,7 @@ OpcodeEntry opcode_dict[] = {
     {0b11010010, "MOVZ"},
     {0b11101010000, "ANDS (Shifted Register)"},
     {0b11001010, "EOR (Shifted Register)"},
-    {0b1101001101, "LSL (Immediate)"},
+    {0b1101001101, "LOGICAL SHIFT"},
     {0b01010100, "B COND"},
     {0b11111000000, "STUR"}, // Reconocer STURB, STUR y LDUR
     {0b11111000010, "LDUR"},
@@ -180,7 +180,7 @@ void process_instruction() {
                 else if (strcmp(opcode_dict[j].mnemonic, "EOR (Shifted Register)") == 0) {
                     eor(instr);
                 }
-                else if (strcmp(opcode_dict[j].mnemonic, "LSL (Immediate)") == 0) {
+                else if (strcmp(opcode_dict[j].mnemonic, "LOGICAL SHIFT") == 0) {
                     logical_shift(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "MOVZ") == 0) {
