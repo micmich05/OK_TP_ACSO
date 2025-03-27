@@ -432,7 +432,7 @@ void lsl (uint32_t instr){
 
     uint64_t operand1 = CURRENT_STATE.REGS[n];
     uint64_t operand2 = immr;
-    uint64_t result = operand1 << imm;
+    uint64_t result = operand1 << immr;
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
