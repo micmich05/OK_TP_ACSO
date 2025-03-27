@@ -422,34 +422,29 @@ void logical_shift (uint32_t instr){
     // Decode
     int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
-    int imm6 = (instr >> 10) & 0x3F;   // bits [15:10]
+    int imm6 = (instr >> 10) & 0x3F;     // bits [15:10]
     int immr = (instr >> 16) & 0x3F;     // bits [21:16]
     uint64_t result;
 
     uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = immr;
 
-    if (imm6 == 111111){result = operand1 >> immr;} //right shift
-    else{result = operand1 << immr;} //left shift
-
-    // Extiende a datasize (64 bits)
-
-
-    
+    // Si imm6 es 0x3F (todos los 6 bits a 1), se realiza un right shift, 
+    // de lo contrario se realiza un left shift.
+    if (imm6 == 0x3F) {
+        result = operand1 >> immr;
+    } else {
+        result = operand1 << immr;
+    }
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
-
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
 
     printf("d: %d\n", d);
     printf("operand1: %llu\n", operand1);
     printf("result: %llu\n", result);
 
-    //Update PC
+    // Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
-    
 }
 
 void movz (uint32_t instr){
