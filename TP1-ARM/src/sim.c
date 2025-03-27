@@ -119,7 +119,7 @@ OpcodeEntry opcode_dict[] = {
     {0b00111000010, "LDURB"},
     {0b11010100, "HALT"},
     {0b10101010000,"ORR (Shifted Register)"},
-    {0b000101, "B"},
+    {0b000000000101, "B"},
     {0b11010110, "BR"},
     {0b01111000000, "STURH"},
     {0b01111000010, "LDURH"},
