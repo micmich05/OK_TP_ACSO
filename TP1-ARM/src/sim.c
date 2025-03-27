@@ -165,7 +165,6 @@ void process_instruction() {
                 else if (strcmp(opcode_dict[j].mnemonic, "HALT") == 0) {
                     RUN_BIT = FALSE;
                     printf("Ejecutando HALT: finalizando simulación\n");
-                    exit(0);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "SUB (Extended register)") == 0) {
                     subs_register(instr);
