@@ -254,7 +254,7 @@ void bcond (uint32_t instr){
     if (check_cond(cond)){
         printf("BCOND True: condition %d met, offset = %llu\n", cond, offset);
         // El target es (PC + 4) + offset
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4 + offset;
+        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
     }
     else{
         printf("BCOND False: condition %d not met, jumping to PC + 4\n", cond);
