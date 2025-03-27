@@ -181,7 +181,7 @@ void process_instruction() {
                     eor(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "LSL (Immediate)") == 0) {
-                    lsl(instr);
+                    logical_shift(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "MOVZ") == 0) {
                     movz(instr);
@@ -418,21 +418,24 @@ void eor (uint32_t instr){
 
 }
 
-void lsl (uint32_t instr){
+void logical_shift (uint32_t instr){
     // Decode
     int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int imm6 = (instr >> 10) & 0x3F;   // bits [15:10]
     int immr = (instr >> 16) & 0x3F;     // bits [21:16]
-
-    // Inicialmente imm es imm12
-    uint64_t imm = imm6;
-
-    // Extiende a datasize (64 bits)
+    uint64_t result;
 
     uint64_t operand1 = CURRENT_STATE.REGS[n];
     uint64_t operand2 = immr;
-    uint64_t result = operand1 << immr;
+
+    if (imm6 == 111111){result = operand1 >> immr;} //right shift
+    else{result = operand1 << immr;} //left shift
+
+    // Extiende a datasize (64 bits)
+
+
+    
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
@@ -441,7 +444,6 @@ void lsl (uint32_t instr){
     // Si es necesario actualizar otros flags, se podría hacer aquí.
 
     printf("d: %d\n", d);
-    printf("imm: %llu\n", imm);
     printf("operand1: %llu\n", operand1);
     printf("result: %llu\n", result);
 
