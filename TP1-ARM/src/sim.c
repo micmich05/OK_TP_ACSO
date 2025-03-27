@@ -592,7 +592,7 @@ void b(uint32_t instr){
     // Execute
     printf("B: offset = %llu\n", offset);
     // El target es (PC + 4) + offset
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4 + offset;
+    NEXT_STATE.PC = CURRENT_STATE.PC  + offset;
 }
 
 void br(uint32_t instr){
