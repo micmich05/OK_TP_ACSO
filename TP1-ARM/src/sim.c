@@ -437,6 +437,11 @@ void logical_shift (uint32_t instr){
 
 
     printf("d: %d\n", d);
+    printf("imm6: %d\n", imm6);
+    printf("immr: %d\n", immr);
+    printf("operand1: %llu\n", CURRENT_STATE.REGS[n]);
+    printf("result: %llu\n", NEXT_STATE.REGS[d]);
+    
 
     // Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
