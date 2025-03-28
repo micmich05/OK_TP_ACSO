@@ -1,6 +1,6 @@
 .text
     // Se asume que X2 se usará como base (corresponde a 0x10000000 en el simulador)
-    movz    X2, 0x1000, LSL #16
+    movz    X2, 0x1000
 
     // --- STUR y LDUR ---
     // Almacena en M[X2 + 0x10] el valor de X1.
