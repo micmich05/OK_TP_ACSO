@@ -141,12 +141,13 @@ void process_instruction() {
                 else if (strcmp(opcode_dict[j].mnemonic, "ANDS (Shifted Register)") == 0) {
                     ands(instr);
                 }
+                else if( strcmp(opcode_dict[j].mnemonic, "ADD (Immediate)") == 0) {
+                    add_imm(instr);
+                }
                 else if (strcmp(opcode_dict[j].mnemonic, "ADD (Extended register)") == 0) {
                     add_register(instr);
                 }
-                else if (strcmp(opcode_dict[j].mnemonic, "ADDS (Shifted Register)") == 0) {
-                    adds_register(instr);
-                }
+
                 else if (strcmp(opcode_dict[j].mnemonic, "EOR (Shifted Register)") == 0) {
                     eor(instr);
                 }
