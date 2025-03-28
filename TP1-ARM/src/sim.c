@@ -34,6 +34,11 @@ void cbz(uint32_t instr);
 void cbnz(uint32_t instr);
 void update_pc();
 void update_flags(uint64_t result);
+void adds_imm(uint32_t instr);
+void add_imm(uint32_t instr);
+void process_instruction();
+void add_register(uint32_t instr);
+
 
 
 
@@ -63,7 +68,9 @@ typedef struct {
 
 OpcodeEntry opcode_dict[] = {
     {0b10110001, "ADDS (Immediate)"},
+    {0b10010001, "ADD (Immediate)"},
     {0b10101011, "ADDS (Extended register)"},
+    {0b10001011, "ADD (Extended register)"},
     {0b11101011, "SUBS (Extended register)"},
     {0b11110001, "SUBS (Immediate)"},
     {0b11010010, "MOVZ"},
@@ -133,6 +140,12 @@ void process_instruction() {
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "ANDS (Shifted Register)") == 0) {
                     ands(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "ADD (Extended register)") == 0) {
+                    add_register(instr);
+                }
+                else if (strcmp(opcode_dict[j].mnemonic, "ADDS (Shifted Register)") == 0) {
+                    adds_register(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "EOR (Shifted Register)") == 0) {
                     eor(instr);
@@ -232,6 +245,38 @@ void adds_imm(uint32_t instr) {
     update_pc();
 }
 
+void add_imm(uint32_t instr) {
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int datasize = 64;
+    int imm12 = (instr >> 10) & 0xFFF;   // bits [21:10]
+    int shift = (instr >> 22) & 0x1;     // solo 1 bit en lugar de 2
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm12;
+
+    switch (shift) {
+        case 0:
+            imm = zeroExtend(imm, datasize);
+            break;
+        case 1:
+            imm = zeroExtend(imm << 12, datasize);
+            break;
+    }
+
+    // Extiende a datasize (64 bits)
+    imm = imm & ~0ULL;
+
+    uint64_t result = CURRENT_STATE.REGS[n] + imm;
+
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = result;
+
+    // Actualiza el PC para avanzar a la siguiente instrucción
+    update_pc();
+}
+
+
 
 
 void bcond (uint32_t instr){
@@ -322,6 +367,24 @@ void adds_register(uint32_t instr){
 
     //Actualiza flags
     update_flags(result);
+
+    // Actualizar el PC para avanzar a la siguiente instrucción
+    update_pc();
+    
+}
+
+void add_register(uint32_t instr){
+    // Decode
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
+
+    // Realizar la suma: resultado = Rn + ext_rm
+    uint64_t result = CURRENT_STATE.REGS[n] + CURRENT_STATE.REGS[m];
+    
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = result;
+
 
     // Actualizar el PC para avanzar a la siguiente instrucción
     update_pc();
