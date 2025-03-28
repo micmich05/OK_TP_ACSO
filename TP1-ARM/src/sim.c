@@ -142,7 +142,7 @@ void process_instruction() {
 
     const int shifts[] = {21, 22, 23, 24, 26};
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         uint32_t key = (instr & masks[i]) >> shifts[i];
 
         for (int j = 0; opcode_dict[j].mnemonic != NULL; j++) {
