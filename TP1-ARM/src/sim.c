@@ -719,7 +719,7 @@ bool check_cond(int cond){
         case 0b1010: // Greater than or equal
             return CURRENT_STATE.FLAG_N == 0;
         case 0b1011: // Less than
-            return CURRENT_STATE.FLAG_N == 1 && CURRENT_STATE.FLAG_Z == 0;
+            return CURRENT_STATE.FLAG_N == 1;
         case 0b1100: // Greater than
             return CURRENT_STATE.FLAG_N == 0 && CURRENT_STATE.FLAG_Z == 0;
         case 0b1101: // Less than or equal
