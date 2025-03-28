@@ -140,7 +140,7 @@ void process_instruction() {
         OPCODE_MASK_26_31
     };
 
-    const int shifts[] = {21, 22, 23, 24, 25};
+    const int shifts[] = {21, 22, 23, 24, 26};
 
     for (int i = 0; i < 4; i++) {
         uint32_t key = (instr & masks[i]) >> shifts[i];
@@ -300,6 +300,8 @@ void subis(uint32_t instr){
     printf("operand1: %llu\n", operand1);
     printf("result: %llu\n", result);
 
+    CURRENT_STATE.REGS[31] = 0;
+
     //Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     
@@ -327,6 +329,8 @@ void subs_register(uint32_t instr){
     printf("d: %d\n", d);
     printf("operand1: %llu\n", operand1);
     printf("result: %llu\n", result);
+
+    CURRENT_STATE.REGS[31] = 0;
 
     //Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
