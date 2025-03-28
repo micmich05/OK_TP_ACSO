@@ -32,6 +32,8 @@ void ldurh(uint32_t instr);
 void mul(uint32_t instr);
 void cbz(uint32_t instr);
 void cbnz(uint32_t instr);
+void update_pc();
+void update_flags(uint64_t result);
 
 
 
@@ -41,49 +43,7 @@ void cbnz(uint32_t instr);
 
 // Funciones integradas de add.c
 
-void adds_imm(uint32_t instr) {
-    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
-    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
-    int datasize = 64;
-    int imm12 = (instr >> 10) & 0xFFF;   // bits [21:10]
-    int shift = (instr >> 22) & 0x1;     // solo 1 bit en lugar de 2
 
-    // Inicialmente imm es imm12
-    uint64_t imm = imm12;
-
-    switch (shift) {
-        case 0:
-            imm = zeroExtend(imm, datasize);
-            break;
-        case 1:
-            imm = zeroExtend(imm << 12, datasize);
-            break;
-        default:
-            printf("ReservedValue()\n");
-            return;
-    }
-
-    // Extiende a datasize (64 bits)
-    imm = imm & ~0ULL;
-
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t result = operand1 + imm;
-
-    // Guardar el resultado en el registro destino
-    NEXT_STATE.REGS[d] = result;
-
-    //actualizo flags
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-
-    // Actualiza el PC para avanzar a la siguiente instrucción
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
-
-    printf("d: %d\n", d);
-    printf("imm: %llu\n", imm);
-    printf("operand1: %llu\n", operand1);
-    printf("result: %llu\n", result);
-}
 
 // Declaración de funciones definidas en shell.c
 void initialize(const char *program_file, int num_files);
@@ -243,6 +203,42 @@ void process_instruction() {
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     CURRENT_STATE = NEXT_STATE;
 }
+void adds_imm(uint32_t instr) {
+    int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
+    int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
+    int datasize = 64;
+    int imm12 = (instr >> 10) & 0xFFF;   // bits [21:10]
+    int shift = (instr >> 22) & 0x1;     // solo 1 bit en lugar de 2
+
+    // Inicialmente imm es imm12
+    uint64_t imm = imm12;
+
+    switch (shift) {
+        case 0:
+            imm = zeroExtend(imm, datasize);
+            break;
+        case 1:
+            imm = zeroExtend(imm << 12, datasize);
+            break;
+    }
+
+    // Extiende a datasize (64 bits)
+    imm = imm & ~0ULL;
+
+    uint64_t result = CURRENT_STATE.REGS[n] + imm;
+
+    // Guardar el resultado en el registro destino
+    NEXT_STATE.REGS[d] = result;
+
+    //actualizo flags
+    update_flags(result);
+
+
+    // Actualiza el PC para avanzar a la siguiente instrucción
+    update_pc();
+}
+
+
 
 void bcond (uint32_t instr){
     // Decode
@@ -252,13 +248,11 @@ void bcond (uint32_t instr){
 
     // Execute
     if (check_cond(cond)){
-        printf("BCOND True: condition %d met, offset = %llu\n", cond, offset);
         // El target es (PC + 4) + offset
         NEXT_STATE.PC = CURRENT_STATE.PC + offset;
     }
     else{
-        printf("BCOND False: condition %d not met, jumping to PC + 4\n", cond);
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+        update_pc();
     }
 }
 
@@ -284,25 +278,18 @@ void subis(uint32_t instr){
 
     // Extiende a datasize (64 bits)
 
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = imm;
-    uint64_t result = operand1 - operand2;
+    uint64_t result = CURRENT_STATE.REGS[n] - imm;
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
     //actualizar flags
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
+    update_flags(result);
 
-    printf("d: %d\n", d);
-    printf("imm: %llu\n", imm);
-    printf("operand1: %llu\n", operand1);
-    printf("result: %llu\n", result);
 
 
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
     
 }
 
@@ -314,23 +301,16 @@ void subs_register(uint32_t instr){
 
     // Extiende a datasize (64 bits)
 
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = CURRENT_STATE.REGS[m];
-    uint64_t result = operand1 - operand2;
+    uint64_t result = CURRENT_STATE.REGS[n] - CURRENT_STATE.REGS[m];
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
     //actualizar flags
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-
-    printf("d: %d\n", d);
-    printf("operand1: %llu\n", operand1);
-    printf("result: %llu\n", result);
+    update_flags(result);
 
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
     
 }
 
@@ -339,25 +319,19 @@ void adds_register(uint32_t instr){
     int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
-    int datasize = 64;
 
     // Realizar la suma: resultado = Rn + ext_rm
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = CURRENT_STATE.REGS[m];
-    uint64_t result = operand1 + operand2;
+    uint64_t result = CURRENT_STATE.REGS[n] + CURRENT_STATE.REGS[m];
     
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
     //Actualiza flags
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
+    update_flags(result);
 
     // Actualizar el PC para avanzar a la siguiente instrucción
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
     
-    printf("ADDS (Extended register): d=%d, n=%d, m=%d, imm3=%d, option=%d, rm_val=%llu, ext_rm=%llu, result=%llu\n",
-           d, n, m, result);
 }
 
 void ands(uint32_t instr){
@@ -368,28 +342,18 @@ void ands(uint32_t instr){
 
     // Inicialmente imm es imm12
 
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = CURRENT_STATE.REGS[m];
-
-
     // Extiende a datasize (64 bits)
 
-    uint64_t result = operand1 & operand2;
+    uint64_t result = CURRENT_STATE.REGS[n] & CURRENT_STATE.REGS[m];
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
     //actualizar flags
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-
-    printf("d: %d\n", d);
-    printf("operand2: %llu\n", operand2);
-    printf("operand1: %llu\n", operand1);
-    printf("result: %llu\n", result);
+    update_flags(result);
 
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void eor (uint32_t instr){
@@ -400,22 +364,14 @@ void eor (uint32_t instr){
 
     // Inicialmente imm es imm12
 
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = CURRENT_STATE.REGS[m];
-
-    uint64_t result = operand1 ^ operand2;
+    uint64_t result = CURRENT_STATE.REGS[n] ^ CURRENT_STATE.REGS[m];
 
     // Guardar el resultado en el registro destino
 
     NEXT_STATE.REGS[d] = result;
 
-    printf("d: %d\n", d);
-    printf("operand2: %llu\n", operand2);
-    printf("operand1: %llu\n", operand1);
-    printf("result: %llu\n", result);
-
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 
 }
 
@@ -427,26 +383,19 @@ void logical_shift (uint32_t instr){
     uint8_t immr = (instr >> 16) & 0x3F; // bits [21:16]
     uint64_t result;
     
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
     
     // Para instrucciones LSL, el inmediato efectivo es: 64 - immr.
     // Si imm6 es 0x3F se trata de un LSR, y se usa immr directamente.
     if (imm6 == 0x3F) {
-        result = operand1 >> immr;
+        result = CURRENT_STATE.REGS[n] >> immr;
     } else {
-        result = operand1 << (64 - immr);
+        result = CURRENT_STATE.REGS[n] << (64 - immr);
     }
     
     NEXT_STATE.REGS[d] = result;
     
-    printf("d: %d\n", d);
-    printf("imm6: %d\n", imm6);
-    printf("immr: %d\n", immr);
-    printf("operand1: %llu\n", operand1);
-    printf("result: %llu\n", result);
-    
     // Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void movz (uint32_t instr){
@@ -461,14 +410,8 @@ void movz (uint32_t instr){
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = imm;
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
-
-    printf("d: %d\n", d);
-    printf("imm: %llu\n", imm);
-
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void sturb (uint32_t instr){
@@ -487,11 +430,8 @@ void sturb (uint32_t instr){
     // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
     // Si es necesario actualizar otros flags, se podría hacer aquí.
 
-    printf("t: %d\n", t);
-    printf("imm: %llu\n", imm);
-
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void stur (uint32_t instr){
@@ -510,11 +450,9 @@ void stur (uint32_t instr){
     // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
     // Si es necesario actualizar otros flags, se podría hacer aquí.
 
-    printf("t: %d\n", t);
-    printf("imm: %llu\n", imm);
 
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void ldur (uint32_t instr){
@@ -530,14 +468,8 @@ void ldur (uint32_t instr){
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[t] = mem_read_64(CURRENT_STATE.REGS[n] + imm);
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
-
-    printf("t: %d\n", t);
-    printf("imm: %llu\n", imm);
-
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void ldurb (uint32_t instr){
@@ -555,12 +487,10 @@ void ldurb (uint32_t instr){
     uint8_t loaded_val = mem_read_8(CURRENT_STATE.REGS[n] + imm);
     NEXT_STATE.REGS[t] = (uint64_t) loaded_val;
     
-    printf("t: %d\n", t);
-    printf("imm: %llu\n", imm);
-    printf("loaded value: %u\n", loaded_val);
+
 
     // Actualiza PC para la siguiente instrucción
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void orr (uint32_t instr){
@@ -568,21 +498,14 @@ void orr (uint32_t instr){
     int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
-
-    // Recuperar el valor de Rm
-    uint64_t operand1 = CURRENT_STATE.REGS[m];
-    uint64_t operand2 = CURRENT_STATE.REGS[n];
     
-    uint64_t result = operand1 | operand2;
+    uint64_t result = CURRENT_STATE.REGS[m] | CURRENT_STATE.REGS[n];
     
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
     // Actualizar el PC para avanzar a la siguiente instrucción
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
     
-    printf("ORR (Shifted Register): d=%d, n=%d, m=%d, operand1=%llu, operand2=%llu, result=%llu\n",
-           d, n, m, operand1, operand2, result);
-
 }
 
 void b(uint32_t instr){
@@ -591,7 +514,6 @@ void b(uint32_t instr){
     uint64_t offset = SignExtend(imm26 << 2, 28);
 
     // Execute
-    printf("B: offset = %llu\n", offset);
     // El target es (PC + 4) + offset
     NEXT_STATE.PC = CURRENT_STATE.PC  + offset;
 }
@@ -600,8 +522,6 @@ void br(uint32_t instr){
     // Decode
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
 
-    // Execute
-    printf("BR: jumping to address in register %d\n", n);
     // El target es el contenido del registro n
     NEXT_STATE.PC = CURRENT_STATE.REGS[n];
 }
@@ -622,11 +542,9 @@ void sturh (uint32_t instr){
     // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
     // Si es necesario actualizar otros flags, se podría hacer aquí.
 
-    printf("t: %d\n", t);
-    printf("imm: %llu\n", imm);
 
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void ldurh (uint32_t instr){
@@ -643,12 +561,9 @@ void ldurh (uint32_t instr){
     uint8_t loaded_val = mem_read_8(CURRENT_STATE.REGS[n] + imm);
     NEXT_STATE.REGS[t] = (uint64_t) loaded_val;
 
-    printf("t: %d\n", t);
-    printf("imm: %llu\n", imm);
-    printf("loaded value: %u\n", loaded_val);
 
     //Update PC
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 }
 
 void mul(uint32_t instr){
@@ -657,19 +572,14 @@ void mul(uint32_t instr){
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
 
-    // Execute
-    uint64_t operand1 = CURRENT_STATE.REGS[n];
-    uint64_t operand2 = CURRENT_STATE.REGS[m];
-    uint64_t result = operand1 * operand2;
+    uint64_t result = CURRENT_STATE.REGS[n] * CURRENT_STATE.REGS[m];
 
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
     // Actualizar el PC para avanzar a la siguiente instrucción
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    update_pc();
 
-    printf("MUL: d=%d, n=%d, m=%d, operand1=%llu, operand2=%llu, result=%llu\n",
-           d, n, m, operand1, operand2, result);
 }
 
 void cbz (uint32_t instr){
@@ -680,13 +590,11 @@ void cbz (uint32_t instr){
 
     // Execute
     if (CURRENT_STATE.REGS[t] == 0){
-        printf("CBZ True: register %d is zero, offset = %llu\n", t, offset);
-        // El target es (PC + 4) + offset
+
         NEXT_STATE.PC = CURRENT_STATE.PC + offset;
     }
     else{
-        printf("CBZ False: register %d is not zero, jumping to PC + 4\n", t);
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+        update_pc();
     }
 }
 
@@ -698,13 +606,11 @@ void cbnz (uint32_t instr){
 
     // Execute
     if (CURRENT_STATE.REGS[t] != 0){
-        printf("CBNZ True: register %d is not zero, offset = %llu\n", t, offset);
-        // El target es (PC + 4) + offset
+
         NEXT_STATE.PC = CURRENT_STATE.PC + offset;
     }
     else{
-        printf("CBNZ False: register %d is zero, jumping to PC + 4\n", t);
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+        update_pc();
     }
 }
 
@@ -784,4 +690,14 @@ void mem_write_64(uint64_t addr, uint64_t value) {
     uint32_t high = (uint32_t)(value >> 32);
     mem_write_32(addr, low);
     mem_write_32(addr + 4, high);
+}
+
+void update_flags(uint64_t result) {
+    NEXT_STATE.FLAG_N = (result >> 63) & 1; // Actualiza FLAG_N
+    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0; // Actualiza FLAG_Z
+}
+
+void update_pc()
+{
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
