@@ -62,18 +62,16 @@ typedef struct {
 } OpcodeEntry;
 
 OpcodeEntry opcode_dict[] = {
-    {0b10110001, "ADD (Immediate)"},
-    {0b10101011, "ADD (Extended register)"},
-    {0b11101011, "SUB (Extended register)"},
-    {0b11110001, "SUB (Immediate)"},
-    //{0b110100101, "MOV (Wide Inmediate)"},
-    //{0b11010000, "MOV"},
+    {0b10110001, "ADDS (Immediate)"},
+    {0b10101011, "ADDS (Extended register)"},
+    {0b11101011, "SUBS (Extended register)"},
+    {0b11110001, "SUBS (Immediate)"},
     {0b11010010, "MOVZ"},
     {0b11101010000, "ANDS (Shifted Register)"},
     {0b11001010, "EOR (Shifted Register)"},
     {0b1101001101, "LOGICAL SHIFT"},
     {0b01010100, "B COND"},
-    {0b11111000000, "STUR"}, // Reconocer STURB, STUR y LDUR
+    {0b11111000000, "STUR"}, 
     {0b11111000010, "LDUR"},
     {0b00111000000, "STURB"},
     {0b00111000010, "LDURB"},
@@ -107,31 +105,30 @@ void process_instruction() {
 
         for (int j = 0; opcode_dict[j].mnemonic != NULL; j++) {
             if (opcode_dict[j].opcode == key) {
-                // Imprime el mnemónico de la instrucción detectada
-                printf("Ejecutando %s\n", opcode_dict[j].mnemonic);
+
 
                 // Llama a adds_imm si se detecta "ADD (Immediate)"
-                if (strcmp(opcode_dict[j].mnemonic, "ADD (Immediate)") == 0) {
+                if (strcmp(opcode_dict[j].mnemonic, "ADDS (Immediate)") == 0) {
                     adds_imm(instr);
                 }
                 // Llama a bcond si se detecta "B COND"
                 else if (strcmp(opcode_dict[j].mnemonic, "B COND") == 0) {
                     bcond(instr);
                 }
-                else if (strcmp(opcode_dict[j].mnemonic, "SUB (Immediate)") == 0) {
+                else if (strcmp(opcode_dict[j].mnemonic, "SUBS (Immediate)") == 0) {
                     subis(instr);
                 }
                 // Si la instrucción es HALT se detiene la simulación
                 else if (strcmp(opcode_dict[j].mnemonic, "HALT") == 0) {
                     RUN_BIT = FALSE;
                     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
-                    printf("Ejecutando HALT: finalizando simulación\n");
+
                 }
-                else if (strcmp(opcode_dict[j].mnemonic, "SUB (Extended register)") == 0) {
+                else if (strcmp(opcode_dict[j].mnemonic, "SUBS (Extended register)") == 0) {
                     subs_register(instr);
                 }
-                else if (strcmp(opcode_dict[j].mnemonic, "ADD (Extended register)") == 0) {
-                    printf("entro al add");
+                else if (strcmp(opcode_dict[j].mnemonic, "ADDS (Extended register)") == 0) {
+
                     adds_register(instr);
                 }
                 else if (strcmp(opcode_dict[j].mnemonic, "ANDS (Shifted Register)") == 0) {
@@ -186,7 +183,7 @@ void process_instruction() {
                 
                 // Si es otra instrucción, solo se muestra su mnemónico
                 else {
-                    printf("%s\n", opcode_dict[j].mnemonic);
+
                     // Actualiza el PC para instrucciones que no modifican la branch
                     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
                 }
@@ -196,10 +193,7 @@ void process_instruction() {
             }
         }
     }
-    printf("Instruccion no encontrada\n");
-    // Actualizar PC aún si la instrucción no fue reconocida
-    printf("PC: %d\n", CURRENT_STATE.PC);
-    printf("Opcode: 0x%08X\n", instr);
+
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     CURRENT_STATE = NEXT_STATE;
 }
@@ -645,17 +639,6 @@ uint64_t zeroExtend(uint64_t imm, int datasize) {
         return imm;
     else
         return imm & ((1ULL << datasize) - 1);
-}
-
-uint64_t addWithCarry(uint64_t x, uint64_t y, int carry_in) {
-    int unsigned_sum =(unsigned int) x + (unsigned int)y + (unsigned int)carry_in;
-    uint64_t result = unsigned_sum & ((1ULL << 64) - 1);
-
-    // Actualiza banderas de estado
-    NEXT_STATE.FLAG_N = (result >> 63) & 1;
-    NEXT_STATE.FLAG_Z = (result == 0) ? 1 : 0;
-
-    return result;
 }
 
 
