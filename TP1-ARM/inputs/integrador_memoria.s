@@ -11,14 +11,14 @@
     // --- STURB y LDURB ---
     // Almacena 8 bits (byte) de X1 en M[X2 + 0x20].
     movz    X1, 0xFF         // valor: 0xFF
-    sturb   X1, [X2, #0x20]
-    ldurb   W4, [X2, #0x20]   // W4 contendrá 0xFF (zero-extended a 64 bits)
+    sturb   w1, [X2, #32]     // usa w1 en lugar de X1 y offset decimal correspondiente
+    ldurb   w4, [X2, #32]     // w4 contendrá 0xFF (zero-extended a 64 bits)
 
     // --- STURH y LDURH ---
     // Almacena 16 bits de X1 en M[X2 + 0x30].
     movz    X1, 0xABCD
-    sturh   X1, [X2, #0x30]
-    ldurh   W5, [X2, #0x30]   // W5 contendrá 0xABCD
+    sturh   w1, [X2, #48]     // usa w1 y offset decimal correspondiente
+    ldurh   w5, [X2, #48]     // w5 contendrá 0xABCD
 
     // --- Reflejo de resultados mediante aritmética ---
     // Suma de los valores cargados: X6 = X3 + X4
