@@ -712,18 +712,18 @@ void cbnz (uint32_t instr){
 
 bool check_cond(int cond){
     switch (cond){
-        case 0b0000: //Equal
+        case 0b0000: // Equal
             return CURRENT_STATE.FLAG_Z == 1;
-        case 0b0001: //Not equal
+        case 0b0001: // Not equal
             return CURRENT_STATE.FLAG_Z == 0;
-        case 0b1010: //Greater than or equal
-            return CURRENT_STATE.FLAG_N == 0 || CURRENT_STATE.FLAG_Z == 1;
-        case 0b1011: //Less than
-            return CURRENT_STATE.FLAG_N != 1 && CURRENT_STATE.FLAG_Z == 0;
-        case 0b1100: //Greater than
+        case 0b1010: // Greater than or equal
+            return CURRENT_STATE.FLAG_N == 0;
+        case 0b1011: // Less than
+            return CURRENT_STATE.FLAG_N == 1 && CURRENT_STATE.FLAG_Z == 0;
+        case 0b1100: // Greater than
             return CURRENT_STATE.FLAG_N == 0 && CURRENT_STATE.FLAG_Z == 0;
-        case 0b1101: //Less than or equal
-            return CURRENT_STATE.FLAG_N == 1 || CURRENT_STATE.FLAG_Z == 1;
+        case 0b1101: // Less than or equal
+            return (CURRENT_STATE.FLAG_N == 1) || (CURRENT_STATE.FLAG_Z == 1);
         default:
             return false;
     }
