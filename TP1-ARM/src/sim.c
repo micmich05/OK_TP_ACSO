@@ -682,7 +682,7 @@ void cbz (uint32_t instr){
     if (CURRENT_STATE.REGS[t] == 0){
         printf("CBZ True: register %d is zero, offset = %llu\n", t, offset);
         // El target es (PC + 4) + offset
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4 + offset;
+        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
     }
     else{
         printf("CBZ False: register %d is not zero, jumping to PC + 4\n", t);
@@ -700,7 +700,7 @@ void cbnz (uint32_t instr){
     if (CURRENT_STATE.REGS[t] != 0){
         printf("CBNZ True: register %d is not zero, offset = %llu\n", t, offset);
         // El target es (PC + 4) + offset
-        NEXT_STATE.PC = CURRENT_STATE.PC + 4 + offset;
+        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
     }
     else{
         printf("CBNZ False: register %d is zero, jumping to PC + 4\n", t);
