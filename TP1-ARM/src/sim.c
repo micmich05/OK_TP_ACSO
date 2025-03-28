@@ -258,7 +258,7 @@ void bcond (uint32_t instr){
     }
     else{
         printf("BCOND False: condition %d not met, jumping to PC + 4\n", cond);
-        NEXT_STATE.PC = CURRENT_STATE.PC ;
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     }
 }
 
