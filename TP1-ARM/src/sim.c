@@ -119,7 +119,7 @@ OpcodeEntry opcode_dict[] = {
     {0b00111000010, "LDURB"},
     {0b11010100, "HALT"},
     {0b10101010000,"ORR (Shifted Register)"},
-    {0b000000000101, "B"},
+    {0b000101, "B"},
     {0b11010110, "BR"},
     {0b01111000000, "STURH"},
     {0b01111000010, "LDURH"},
@@ -140,7 +140,7 @@ void process_instruction() {
         OPCODE_MASK_26_31
     };
 
-    const int shifts[] = {21, 22, 23, 24, 26};
+    const int shifts[] = {21, 22, 23, 24, 25};
 
     for (int i = 0; i < 4; i++) {
         uint32_t key = (instr & masks[i]) >> shifts[i];
