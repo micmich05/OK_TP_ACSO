@@ -230,7 +230,7 @@ void process_instruction() {
                     // Actualiza el PC para instrucciones que no modifican la branch
                     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
                 }
-
+                NEXT_STATE.REGS[31] = 0;
                 CURRENT_STATE = NEXT_STATE;
                 return;
             }
@@ -300,7 +300,6 @@ void subis(uint32_t instr){
     printf("operand1: %llu\n", operand1);
     printf("result: %llu\n", result);
 
-    CURRENT_STATE.REGS[31] = 0;
 
     //Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
@@ -329,8 +328,6 @@ void subs_register(uint32_t instr){
     printf("d: %d\n", d);
     printf("operand1: %llu\n", operand1);
     printf("result: %llu\n", result);
-
-    CURRENT_STATE.REGS[31] = 0;
 
     //Update PC
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
