@@ -19,7 +19,7 @@
     // --- SUBS Immediate (shift == 0) ---
     // Se espera: X4 = X1 - 3 → 50 - 3 = 47
     movz    X1, 50
-    subis   X4, X1, 3
+    subs    X4, X1, 3
 
     // --- SUBS Extended Register ---
     // Se espera: X5 = X1 - X2 → 100 - 25 = 75
@@ -65,11 +65,11 @@ label_beq:
     // --- LSL (Immediate) ---
     // Se espera: X11 = X3 << 4; con X3 = 2 → 2 << 4 = 32
     movz    X3, 2
-    lsl     X11, X3, 4
+    lsl     X11, X3, #4
 
     // --- LSR (Immediate) ---
     // Se espera: X12 = X3 >> 1; con X3 = 2 → 2 >> 1 = 1
-    lsr     X12, X3, 1
+    lsr     X12, X3, #1
 
     // --- CBZ ---
     // Si X13 == 0, salta la instrucción siguiente.
@@ -83,4 +83,4 @@ label_cbz:
     cbnz    X13, label_cbnz
     adds    X15, X0, 1   // no se ejecuta
 label_cbnz:
-    HLT     0
+    hlt     0

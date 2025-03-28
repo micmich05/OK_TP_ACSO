@@ -53,11 +53,11 @@ label_bge:
 label_ble:
     adds    X8, X0, 2   // se ejecuta
 
-    // --- B incondicional ---
+    // --- Branch incondicional ---
     // Salta siempre (B se prueba con un salto relativo hacia adelante).
     b       label_forward
     adds    X9, X0, 1   // no se ejecuta
 label_forward:
     adds    X9, X0, 2   // se ejecuta
 
-    HLT     0
+    hlt     0

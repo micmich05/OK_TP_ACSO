@@ -1,6 +1,6 @@
 .text
     // Se asume que X2 se usará como base (corresponde a 0x10000000 en el simulador)
-    movz    X2, 0
+    movz    X2, 0x1000, LSL #16
 
     // --- STUR y LDUR ---
     // Almacena en M[X2 + 0x10] el valor de X1.
@@ -22,10 +22,9 @@
 
     // --- Reflejo de resultados mediante aritmética ---
     // Suma de los valores cargados: X6 = X3 + X4
-    // (Se usa ADD en modo Extended Register: add X6, X3, X4)
     add     X6, X3, X4      // X6 = 0x1234 + 0xFF
 
     // Suma final: X7 = X6 + X5
     add     X7, X6, X5      // X7 = (0x1234 + 0xFF) + 0xABCD
 
-    HLT     0
+    hlt     0
