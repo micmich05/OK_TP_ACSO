@@ -61,9 +61,9 @@ typedef struct {
 OpcodeEntry opcode_dict[] = {
     {0b10110001, "ADDS (Immediate)"},
     {0b10010001, "ADD (Immediate)"},
-    {0b10101011001, "ADDS (Extended register)"},
+    {0b10101011000, "ADDS (Extended register)"},
     {0b10001011, "ADD (Extended register)"},
-    {0b11101011001, "SUBS (Extended register)"},
+    {0b11101011000, "SUBS (Extended register)"},
     {0b11110001, "SUBS (Immediate)"},
     {0b11010010, "MOVZ"},
     {0b11101010000, "ANDS (Shifted Register)"},
