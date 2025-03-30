@@ -42,14 +42,6 @@ void add_register(uint32_t instr);
 
 
 
-
-
-// Se eliminó la declaración externa de adds_imm, ya que se implementa a continuación
-
-// Funciones integradas de add.c
-
-
-
 // Declaración de funciones definidas en shell.c
 void initialize(const char *program_file, int num_files);
 void get_command(FILE *dumpsim_file);
@@ -69,13 +61,13 @@ typedef struct {
 OpcodeEntry opcode_dict[] = {
     {0b10110001, "ADDS (Immediate)"},
     {0b10010001, "ADD (Immediate)"},
-    {0b10101011, "ADDS (Extended register)"},
+    {0b10101011001, "ADDS (Extended register)"},
     {0b10001011, "ADD (Extended register)"},
-    {0b11101011, "SUBS (Extended register)"},
+    {0b11101011001, "SUBS (Extended register)"},
     {0b11110001, "SUBS (Immediate)"},
     {0b11010010, "MOVZ"},
     {0b11101010000, "ANDS (Shifted Register)"},
-    {0b11001010, "EOR (Shifted Register)"},
+    {0b11001010000, "EOR (Shifted Register)"},
     {0b1101001101, "LOGICAL SHIFT"},
     {0b01010100, "B COND"},
     {0b11111000000, "STUR"}, 
@@ -195,7 +187,6 @@ void process_instruction() {
                     cbnz(instr);
                 }
                 
-                // Si es otra instrucción, solo se muestra su mnemónico
                 else {
 
                     // Actualiza el PC para instrucciones que no modifican la branch
@@ -238,11 +229,7 @@ void adds_imm(uint32_t instr) {
     // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
-    //actualizo flags
     update_flags(result);
-
-
-    // Actualiza el PC para avanzar a la siguiente instrucción
     update_pc();
 }
 
@@ -270,10 +257,9 @@ void add_imm(uint32_t instr) {
 
     uint64_t result = CURRENT_STATE.REGS[n] + imm;
 
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[d] = result;
 
-    // Actualiza el PC para avanzar a la siguiente instrucción
     update_pc();
 }
 
@@ -288,7 +274,7 @@ void bcond (uint32_t instr){
 
     // Execute
     if (check_cond(cond)){
-        // El target es (PC + 4) + offset
+        // El target es PC + offset
         NEXT_STATE.PC = CURRENT_STATE.PC + offset;
     }
     else{
@@ -320,15 +306,11 @@ void subis(uint32_t instr){
 
     uint64_t result = CURRENT_STATE.REGS[n] - imm;
 
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[d] = result;
 
-    //actualizar flags
     update_flags(result);
 
-
-
-    //Update PC
     update_pc();
     
 }
@@ -339,17 +321,15 @@ void subs_register(uint32_t instr){
     int n = (unsigned int)((instr >> 5) & 0x1F);         // bits [9:5]: registro fuente
     int m = (unsigned int)((instr >> 16) & 0x1F);        // bits [20:16]: registro fuente 2
 
-    // Extiende a datasize (64 bits)
+
 
     uint64_t result = CURRENT_STATE.REGS[n] - CURRENT_STATE.REGS[m];
 
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[d] = result;
 
-    //actualizar flags
     update_flags(result);
 
-    //Update PC
     update_pc();
     
 }
@@ -360,16 +340,14 @@ void adds_register(uint32_t instr){
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
 
-    // Realizar la suma: resultado = Rn + ext_rm
+
     uint64_t result = CURRENT_STATE.REGS[n] + CURRENT_STATE.REGS[m];
     
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[d] = result;
 
-    //Actualiza flags
-    update_flags(result);
 
-    // Actualizar el PC para avanzar a la siguiente instrucción
+    update_flags(result);
     update_pc();
     
 }
@@ -380,14 +358,10 @@ void add_register(uint32_t instr){
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
 
-    // Realizar la suma: resultado = Rn + ext_rm
     uint64_t result = CURRENT_STATE.REGS[n] + CURRENT_STATE.REGS[m];
     
-    // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
-
-    // Actualizar el PC para avanzar a la siguiente instrucción
     update_pc();
     
 }
@@ -398,19 +372,14 @@ void ands(uint32_t instr){
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
 
-    // Inicialmente imm es imm12
 
-    // Extiende a datasize (64 bits)
 
     uint64_t result = CURRENT_STATE.REGS[n] & CURRENT_STATE.REGS[m];
 
-    // Guardar el resultado en el registro destino
     NEXT_STATE.REGS[d] = result;
 
-    //actualizar flags
     update_flags(result);
 
-    //Update PC
     update_pc();
 }
 
@@ -420,15 +389,11 @@ void eor (uint32_t instr){
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int m = (instr >> 16) & 0x1F;        // bits [20:16]: registro fuente 2
 
-    // Inicialmente imm es imm12
 
     uint64_t result = CURRENT_STATE.REGS[n] ^ CURRENT_STATE.REGS[m];
 
-    // Guardar el resultado en el registro destino
 
     NEXT_STATE.REGS[d] = result;
-
-    //Update PC
     update_pc();
 
 }
@@ -452,7 +417,7 @@ void logical_shift (uint32_t instr){
     
     NEXT_STATE.REGS[d] = result;
     
-    // Update PC
+
     update_pc();
 }
 
@@ -461,14 +426,12 @@ void movz (uint32_t instr){
     int d = (instr >> 0) & 0x1F;         // bits [4:0]: registro destino
     int imm16 = (instr >> 5) & 0xFFFF;   // bits [20:5]
 
-    // Inicialmente imm es imm12
     uint64_t imm = imm16;
     imm = zeroExtend(imm, 64);
 
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[d] = imm;
 
-    //Update PC
     update_pc();
 }
 
@@ -482,13 +445,9 @@ void sturb (uint32_t instr){
     uint64_t imm = imm9;
     imm = zeroExtend(imm, 64);
 
-    // Guardar el resultado en el registro destino
+
     mem_write_8(CURRENT_STATE.REGS[n] + imm, CURRENT_STATE.REGS[t]);
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
-
-    //Update PC
     update_pc();
 }
 
@@ -502,14 +461,8 @@ void stur (uint32_t instr){
     uint64_t imm = imm9;
     imm = zeroExtend(imm, 64);
 
-    // Guardar el resultado en el registro destino
     mem_write_64(CURRENT_STATE.REGS[n] + imm, CURRENT_STATE.REGS[t]);
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
-
-
-    //Update PC
     update_pc();
 }
 
@@ -523,10 +476,9 @@ void ldur (uint32_t instr){
     uint64_t imm = imm9;
     imm = zeroExtend(imm, 64);
 
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[t] = mem_read_64(CURRENT_STATE.REGS[n] + imm);
 
-    //Update PC
     update_pc();
 }
 
@@ -539,15 +491,12 @@ void ldurb (uint32_t instr){
     // Zero extend the immediate value
     uint64_t imm = zeroExtend(imm9, 64);
 
-    // For ldurb W1, [X2, #0x10], imm decodificado debe ser 0x10.
-    // Lee 8 bits de memoria en la dirección (X2 + imm),
-    // luego los extiende a 64 bits (los 56 bits altos se ponen a 0)
+
     uint8_t loaded_val = mem_read_8(CURRENT_STATE.REGS[n] + imm);
     NEXT_STATE.REGS[t] = (uint64_t) loaded_val;
     
 
 
-    // Actualiza PC para la siguiente instrucción
     update_pc();
 }
 
@@ -559,9 +508,8 @@ void orr (uint32_t instr){
     
     uint64_t result = CURRENT_STATE.REGS[m] | CURRENT_STATE.REGS[n];
     
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[d] = result;
-    // Actualizar el PC para avanzar a la siguiente instrucción
     update_pc();
     
 }
@@ -572,7 +520,7 @@ void b(uint32_t instr){
     uint64_t offset = SignExtend(imm26 << 2, 28);
 
     // Execute
-    // El target es (PC + 4) + offset
+    // El target es PC + offset
     NEXT_STATE.PC = CURRENT_STATE.PC  + offset;
 }
 
@@ -590,18 +538,13 @@ void sturh (uint32_t instr){
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int imm9 = (instr >> 12) & 0x1FF;   // bits [20:12]
 
-    // Inicialmente imm es imm12
+
     uint64_t imm = imm9;
     imm = zeroExtend(imm, 64);
 
     // Guardar el resultado en el registro destino
     mem_write_8(CURRENT_STATE.REGS[n] + imm, CURRENT_STATE.REGS[t]);
 
-    // Los flags FLAG_N y FLAG_Z se actualizan en addWithCarry.
-    // Si es necesario actualizar otros flags, se podría hacer aquí.
-
-
-    //Update PC
     update_pc();
 }
 
@@ -611,16 +554,13 @@ void ldurh (uint32_t instr){
     int n = (instr >> 5) & 0x1F;         // bits [9:5]: registro fuente
     int imm9 = (instr >> 12) & 0x1FF;   // bits [20:12]
 
-    // Inicialmente imm es imm12
     uint64_t imm = imm9;
     imm = zeroExtend(imm, 64);
 
-    // Guardar el resultado en el registro destino
+
     uint8_t loaded_val = mem_read_8(CURRENT_STATE.REGS[n] + imm);
     NEXT_STATE.REGS[t] = (uint64_t) loaded_val;
 
-
-    //Update PC
     update_pc();
 }
 
@@ -632,10 +572,9 @@ void mul(uint32_t instr){
 
     uint64_t result = CURRENT_STATE.REGS[n] * CURRENT_STATE.REGS[m];
 
-    // Guardar el resultado en el registro destino
+
     NEXT_STATE.REGS[d] = result;
 
-    // Actualizar el PC para avanzar a la siguiente instrucción
     update_pc();
 
 }
