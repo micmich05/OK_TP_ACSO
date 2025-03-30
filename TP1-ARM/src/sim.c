@@ -192,7 +192,7 @@ void process_instruction() {
                     // Actualiza el PC para instrucciones que no modifican la branch
                     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
                 }
-                NEXT_STATE.REGS[31] = 0;
+                NEXT_STATE.REGS[31] = 0; // El registro X31 se mantiene siemrpre en 0
                 CURRENT_STATE = NEXT_STATE;
                 return;
             }
